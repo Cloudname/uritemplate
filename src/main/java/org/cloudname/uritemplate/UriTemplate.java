@@ -1,5 +1,6 @@
 package org.cloudname.uritemplate;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,7 +90,7 @@ public class UriTemplate {
         boolean first = true;
 
         for (String var : varspec) {
-            if (vars.containsKey(var)) {
+            if (vars.containsKey(var) && vars.get(var) != null) {
                 // the variable is defined, so do something...
 
                 // insert the separator, taking care of first-occurance
@@ -108,12 +109,104 @@ public class UriTemplate {
                 }
 
                 // append the actual variable value
-                sb.append(vars.get(var));
+                sb.append( (operatorParams.allow == OperatorParams.Allow.U) ? encodeU(vars.get(var)) : encodeU_AND_R(vars.get(var)) );
             }
         }
 
         // return the completely expanded string
         return sb.toString();
+    }
+
+    /**
+     * Encode the string allowing unreserved characters directly.
+     *
+     * @param input The string to encode
+     * @return String with all characters, except unreserved, encoded
+     */
+    private static String encodeU(String input) {
+        if (input == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            sb.append(isUnreserved(c) ? c : pctEncode(c));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Encode the string allowing unreserved and reserved characters directly.
+     *
+     * @param input The string to encode
+     * @return String with all characters, except unreserved and reserved, encoded
+     */
+    private static String encodeU_AND_R(String input) {
+        if (input == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            sb.append(isUnreserved(c) || isReserved(c) ? c : pctEncode(c));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Percent encode a single character.
+     *
+     * @param c The character to encode
+     * @return String with the character, interpreted as UTF-8 bytes, encoded as %XX
+     */
+    private static String pctEncode(Character c) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            byte[] bytes = c.toString().getBytes("UTF-8");
+            sb.append("%");
+            for (byte b : bytes) sb.append(String.format("%2X", b));
+        } catch (UnsupportedEncodingException e) { /* this will never happen */ }
+        return sb.toString();
+    }
+
+    /**
+     * ALPHA =  %x41-5A / %x61-7A   ; A-Z / a-z
+     *
+     * @param c
+     * @return
+     */
+    private static boolean isAlpha(Character c) {
+        return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z';
+    }
+
+    /**
+     * DIGIT =  %x30-39             ; 0-9
+     *
+     * @param c
+     * @return
+     */
+    private static boolean isDigit(Character c) {
+        return (c >= '0' && c <= '9');
+    }
+
+    /**
+     * unreserved =  ALPHA / DIGIT / "-" / "." / "_" / " ̃"
+     * @param c
+     * @return
+     */
+    private static boolean isUnreserved(Character c) {
+        return isAlpha(c) || isDigit(c) || (c == '-') || (c == '.') || (c == '_') || (c == '~');
+    }
+
+    /**
+     * reserved =  gen-delims / sub-delims
+     * gen-delims =  ":" / "/" / "?" / "#" / "[" / "]" / "@"
+     * sub-delims =  "!" / "$" / "&" / "’" / "(" / ")"
+     *            /  "*" / "+" / "," / ";" / "="
+     *
+     * @param c
+     * @return
+     */
+    private static boolean isReserved(Character c) {
+        return (c == ':') || (c == '/') || (c == '?') || (c == '#') || (c == '[') || (c == ']') || (c == '@') ||
+                (c == '!') || (c == '$') || (c == '&') || (c == '’') || (c == '(') || (c == ')') ||
+                (c == '*') || (c == '+') || (c == ',') || (c == ';') || (c == '=');
     }
 
     /**
