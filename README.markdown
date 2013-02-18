@@ -3,7 +3,7 @@ URI Templates
 
 This library provides easy expansion of URI templates.
 
-It is an implementation of a soon-to-be RFC, found at
+It is a partial implementation of RFC 6570, found at
 http://code.google.com/p/uri-templates/
 
 So far, the library only supports simple String values, and
