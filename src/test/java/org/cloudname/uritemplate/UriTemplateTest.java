@@ -1,12 +1,13 @@
 package org.cloudname.uritemplate;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -145,5 +146,19 @@ public class UriTemplateTest {
         vars.put("userid", "12345");
         vars.put("type", "email");
         assertThat(template.expand(vars), is("http://www.example.com/users?locale=en#12345,email"));
+    }
+
+    @Test
+    public void testNumberOfExpressions() {
+        UriTemplate template = new UriTemplate(
+                "http://www.example.com/users?locale=en{#userid,type}");
+
+        UriTemplate template2 = new UriTemplate(
+                "http://{+domainname}/users?locale=en{#userid,type}");
+
+        Set<String> extractedVars = template.extractVars();
+        assertThat(extractedVars, containsInAnyOrder("userid", "type"));
+        Set<String> extractedVars2 = template2.extractVars();
+        assertThat(extractedVars2, containsInAnyOrder("domainname", "userid", "type"));
     }
 }
