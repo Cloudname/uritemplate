@@ -2,7 +2,9 @@ package org.cloudname.uritemplate;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Store an uri template, and make it expandable by a variable definition hash.
@@ -61,6 +63,35 @@ public class UriTemplate {
     }
 
     /**
+     * Get the detected variables in a template.
+     *
+     * @return {@link Set} of all detected variables
+     */
+    public Set<String> extractVars() {
+        Set<String> extractedVars = new HashSet<String>();
+        for (int i = 0; i < template.length(); i++) {
+            // look for the start of an expression
+            if (template.charAt(i) != '{') {
+                continue;
+            }
+
+            int exprStart = i + 1;
+            int exprEnd = template.indexOf('}', exprStart);
+            if (exprEnd != -1) {
+                final String expression = template.substring(exprStart, exprEnd);
+                extractedVars.addAll(extractVarsFromExpression(expression));
+
+                // we handled the expression, so continue after it
+                i = exprEnd;
+            } else {
+                // We found an error, so set it
+                errorState.set("Expression not closed", exprStart);
+            }
+        }
+        return extractedVars;
+    }
+
+    /**
      * Expand an expression in the context of a variable map.
      * The algorithm is due to the URI-templates RFC (draft) found at http://tools.ietf.org/html/draft-gregorio-uritemplate-07
      *
@@ -115,6 +146,31 @@ public class UriTemplate {
 
         // return the completely expanded string
         return sb.toString();
+    }
+
+    /**
+     * Extract all variables from a given expression.
+     *
+     * @param expression to parse
+     * @return {@link Set} of all variables in the expression
+     */
+    private static Set<String> extractVarsFromExpression(String expression) {
+        Character operator = expression.charAt(0); // the first character may be an operator
+        int varspecStart = 0; // the varspec tentatively starts here
+        Set<String> extractedVars = new HashSet<String>();
+        if (params.containsKey(operator)) {
+            // found an operator we know about, so skip it to find the varspec
+            varspecStart += 1;
+        }
+
+        // look up the algorithm parameters, and pick apart the varspec
+        String varspecString = expression.substring(varspecStart);
+        String[] varspec = varspecString.split(",");
+
+        for (String var : varspec) {
+            extractedVars.add(var);
+        }
+        return extractedVars;
     }
 
     /**
