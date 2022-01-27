@@ -11,6 +11,19 @@
   <description>URI-Template handling according to RFC 6570</description>
   <url>http://cloudname.org/</url>
 
+  <distributionManagement>
+    <repository>
+      <id>gh</id>
+      <name>GitHub</name>
+      <url>https://maven.pkg.github.com/cloudname/uritemplate</url>
+    </repository>
+    <snapshotRepository>
+      <id>gh</id>
+      <name>GitHub</name>
+      <url>https://maven.pkg.github.com/cloudname/uritemplate</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
